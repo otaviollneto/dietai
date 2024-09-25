@@ -3,23 +3,21 @@ import cors from "@fastify/cors";
 import dotenv from "dotenv";
 import { routes } from "./routes";
 
-const app = Fastify({ logger: true });
 dotenv.config();
 
+const app = Fastify({ logger: true });
+
+// Registrar CORS e as rotas
+app.register(cors);
+app.register(routes);
+
+// Definir um tratador de erros global
 app.setErrorHandler((error, request, reply) => {
   reply.code(400).send({ message: error.message });
 });
 
-const start = async () => {
-  app.register(cors);
-  app.register(routes);
-
-  try {
-    await app.listen({ port: 3333, host: "0.0.0.0" });
-    console.log(`Servidor rodando no http://localost:3333`);
-  } catch (error) {
-    console.log(error);
-  }
+// Exportar como uma função handler compatível com Vercel (sem app.listen)
+export default async (req: any, res: any) => {
+  await app.ready(); // Certifique-se de que o Fastify está pronto
+  app.server.emit("request", req, res); // Delegar a requisição para o Fastify
 };
-
-start();
